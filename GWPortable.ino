@@ -5,7 +5,8 @@
 
 int FSTotal;
 int FSUsed;
-
+const char *ssid = "3dsgateway";
+const char *password = "3dsgateway";
 
 //holds the current upload
 File UploadFile;
@@ -25,10 +26,6 @@ String formatBytes(size_t bytes) {
   }
 }
 
-
-const char *ssid = "3dsgateway";
-const char *password = "3dsgateway";
-
 ESP8266WebServer  server(80);
 WiFiClient client;
 
@@ -45,7 +42,6 @@ void setup()
   IPAddress myIP = WiFi.softAPIP();
   Serial.print("AP IP address: ");
   Serial.println(myIP);
-
 
   // Check if SPIFFS is OK
   if (!SPIFFS.begin())
@@ -179,15 +175,14 @@ bool handleFileRead(String path)
   String pathWithGz = path + ".gz";
   if (SPIFFS.exists(pathWithGz) || SPIFFS.exists(path))
   {
-      // je komt hier als je ingelogd bent
-      if (SPIFFS.exists(pathWithGz))
-        path += ".gz";      
-      File file = SPIFFS.open(path, "r");
-      server.sendHeader("Connection", "close");
-      size_t sent = server.streamFile(file, contentType);
-      size_t contentLength = file.size();
-      file.close();
-      return true;
+    if (SPIFFS.exists(pathWithGz))
+    path += ".gz";      
+    File file = SPIFFS.open(path, "r");
+    server.sendHeader("Connection", "close");
+    size_t sent = server.streamFile(file, contentType);
+    size_t contentLength = file.size();
+    file.close();
+    return true;
   }
   else
   {
@@ -200,20 +195,18 @@ bool handleFileRead(String path)
 void handle_fupload_html()
 {  
   String HTML = "<br>Files on flash:<br>";
-    Dir dir = SPIFFS.openDir("/");
-    while (dir.next())
-    {
-      fileName = dir.fileName();
-      size_t fileSize = dir.fileSize();
-      HTML += fileName.c_str();
-      HTML += " ";
-      HTML += formatBytes(fileSize).c_str();
-      HTML += " , ";
-      HTML += fileSize;
-      HTML += "<br>";
-      //Serial.printf("FS File: %s, size: %s\n", fileName.c_str(), formatBytes(fileSize).c_str());
-    }
-  
+  Dir dir = SPIFFS.openDir("/");
+  while (dir.next())
+  {
+    fileName = dir.fileName();
+    size_t fileSize = dir.fileSize();
+    HTML += fileName.c_str();
+    HTML += " ";
+    HTML += formatBytes(fileSize).c_str();
+    HTML += " , ";
+    HTML += fileSize;
+    HTML += "<br>";
+  }
   server.send ( 200, "text/html", "<form method='POST' action='/fupload2' enctype='multipart/form-data'><input type='file' name='update' multiple><input type='submit' value='Update'></form><br<b>For webfiles only!!</b>Multiple files possible<br>" + HTML);
 }
 
@@ -226,42 +219,41 @@ void loop (void)
 
 void handleFormat()
 {
-    server.send ( 200, "text/html", "OK");
-    Serial.println("Format SPIFFS");
-    if (SPIFFS.format())
-    {
-      if (!SPIFFS.begin())
-      {
-        Serial.println("Format SPIFFS failed");
-      }
-    }
-    else
+  server.send ( 200, "text/html", "OK");
+  Serial.println("Format SPIFFS");
+  if (SPIFFS.format())
+  {
+    if (!SPIFFS.begin())
     {
       Serial.println("Format SPIFFS failed");
     }
-    if (!SPIFFS.begin())
-    {
-      Serial.println("SPIFFS failed, needs formatting");
-    }
-    else
-    {
-      Serial.println("SPIFFS mounted");
-    }
+  }
+  else
+  {
+    Serial.println("Format SPIFFS failed");
+  }
+  if (!SPIFFS.begin())
+  {
+    Serial.println("SPIFFS failed, needs formatting");
+  }
+  else
+  {
+    Serial.println("SPIFFS mounted");
+  }
 }
 
 void handleFileDelete()
 {
-	  if (server.args() == 0) return server.send(500, "text/plain", "BAD ARGS");
-	  String path = server.arg(0);
-	  if (!path.startsWith("/")) path = "/" + path;
-	  Serial.println("handleFileDelete: " + path);
-	  if (path == "/")
-		return server.send(500, "text/plain", "BAD PATH");
-	  if (!SPIFFS.exists(path))
-		return server.send(404, "text/plain", "FileNotFound");
-	  SPIFFS.remove(path);
-	  server.send(200, "text/plain", "");
-	  path = String();
+  if (server.args() == 0) return server.send(500, "text/plain", "BAD ARGS");
+  String path = server.arg(0);
+  if (!path.startsWith("/")) path = "/" + path;
+  Serial.println("handleFileDelete: " + path);
+  if (path == "/")
+  return server.send(500, "text/plain", "BAD PATH");
+  if (!SPIFFS.exists(path))
+  return server.send(404, "text/plain", "FileNotFound");
+  SPIFFS.remove(path);
+  server.send(200, "text/plain", "");
+  path = String();
 }
-
 
