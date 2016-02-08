@@ -98,6 +98,7 @@ void setup()
       yield();
   });
 
+  server.on ( "/format", handleFormat );
   server.on("/upload", handle_fupload_html);
   server.onNotFound([]() {
     if (!handleFileRead(server.uri()))
