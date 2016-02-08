@@ -11,3 +11,6 @@ Simple ESP8266 Access Point with webserver for Gateway 3DS cards
 - Ignore error that you don't have access to internet
 - Point the 3DS browser to http://192.168.4.1
 - Profit!
+
+
+You can erase all the files on the ESP with the URL http://esp-ip/format
